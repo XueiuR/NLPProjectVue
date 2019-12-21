@@ -1,11 +1,11 @@
 <template>
     <div class="login-wrap"
          v-loading="loading"
-         element-loading-text="为您拼命识别中"
+         element-loading-text="正在为您使用多种模型拼命识别中..."
          element-loading-spinner="el-icon-loading"
          element-loading-background="rgba(0, 0, 0, 0.8)">
         <div class="title">NLP Project——恶意样本分析平台</div>
-        <!--上传组件-->
+        <!--上传文本/文件组件-->
         <div class="upload" v-if="isShow">
             <el-tabs v-model="tabsActiveName">
                 <!--用户以文本形式上传API序列-->
@@ -13,13 +13,11 @@
                     <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="0px">
                         <el-form-item prop="api">
                             <el-input v-model="ruleForm.api" :autosize="{ minRows: 12, maxRows:13}"
-                                      placeholder="请在此输入API序列" type="textarea" resize="none">
+                                      placeholder="请在此处输入API序列" type="textarea" resize="none">
                             </el-input>
                         </el-form-item>
                         <div class="submitTextButton">
-                            <el-button type="primary" @click="submitTextUpload('ruleForm')">
-                                提交检测
-                            </el-button>
+                            <el-button type="primary" @click="submitTextUpload('ruleForm')">提交检测</el-button>
                         </div>
                     </el-form>
                 </el-tab-pane>
@@ -27,28 +25,27 @@
                 <el-tab-pane label="提交API序列文件" name="file">
                     <el-upload ref="upload" class="uploadFile"
                                :file-list="fileList" accept=".txt" drag
-                               :limit="1" :on-exceed="handleExceed"
+                               :limit="1" :on-exceed="handleExceed" action=""
                                :on-change="handleChange" :on-remove="handleRemove"
                                :auto-upload="false">
                         <el-button slot="trigger" type="primary">选取文件</el-button>
                         <el-button type="primary" @click="submitFileUpload"
                                    class="uploadFileButton">提交检测</el-button>
-                        <div slot="tip" class="el-upload__tip">每次检测只能上传一个txt文件，支持拖拽</div>
+                        <div slot="tip" class="el-upload__tip">支持拖拽，且每次只能上传一份txt文件</div>
                     </el-upload>
                 </el-tab-pane>
             </el-tabs>
         </div>
 
-        <!--显示组件-->
+        <!--显示结果组件-->
         <div class="result" v-if="!isShow">
             <div class="resultSchartBox">
                 <div class="backToUpload">
                     <el-button type="primary" @click="backToUpload">返回</el-button>
                 </div>
-                <div class="resultFont1">下图为根据API序列生成的可能文件类型概率图，根据图片可以看出，该文件最可能属于:
+                <div class="resultFont1">下图为根据API序列生成的可能文件类型概率图。根据图片可以看出，该文件最可能属于:
                     <div class="resultFont2">
-<!--                        {{newSchartData[7].name}}-->
-                        test
+                        {{newSchartData[7].name}}
                     </div>
                 </div>
                 <schart class="resultSchart" canvasId="pie" :data="schartData"
@@ -67,29 +64,8 @@
         data: function(){
             return {
                 tabsActiveName: 'text', //默认展示标签页
-                url: '', //后端api名称
-                ruleForm: {
-                    api: ''
-                },
                 isShow: 'true',
-                fileList: [],
-                fileContent: '',
-                rules: {
-                    api: [
-                        { required: true, message: '请输入提交的API序列', trigger: 'blur' }
-                    ]
-                },
-                schartData: [
-                    {name:'0-正常文件',value:10},
-                    {name:'1-勒索病毒',value:10},
-                    {name:'2-挖矿程序',value:10},
-                    {name:'3-DDoS木马',value:80},
-                    {name:'4-蠕虫病毒',value:10},
-                    {name:'5-感染型病毒',value:10},
-                    {name:'6-后门程序',value:10},
-                    {name:'7-木马程序',value:30},
-                ],
-                newSchartData: [],
+                loading: false,
                 schartOption: {
                     type:'pie',
                     bgColor: '#ffffff',
@@ -97,7 +73,29 @@
                     legendColor: '#000000',
                     radius: 120
                 },
-                loading: false
+
+                url: '', //后端api名称
+                ruleForm: {
+                    api: ''
+                },
+                rules: {
+                    api: [{ required: true, message: '请输入提交的API序列', trigger: 'blur' }]
+                },
+                fileList: [],
+                fileContent: '',
+                // 测试用数据
+                // schartData: [
+                //     {name:'0-正常文件',value:10},
+                //     {name:'1-勒索病毒',value:10},
+                //     {name:'2-挖矿程序',value:10},
+                //     {name:'3-DDoS木马',value:80},
+                //     {name:'4-蠕虫病毒',value:10},
+                //     {name:'5-感染型病毒',value:10},
+                //     {name:'6-后门程序',value:10},
+                //     {name:'7-木马程序',value:30},
+                // ],
+                schartData: [],
+                newSchartData: [],
             }
         },
         methods: {
@@ -106,31 +104,28 @@
                 _this.$refs[formName].validate((valid) => {
                     if (valid) {
                         _this.loading = true;
-                        _this.url = process.env.API_HOST+'/getResult/'; //需要修改
+                        _this.url = process.env.API_HOST+'/getResult';
                         _this.$axios.post(_this.url, {
                             api: _this.ruleForm.api,
                         }).then(
                             (res) => {
-                                if (res.code == 200){
+                                if (res.data.code == 200){
                                     setTimeout(function () {
                                         _this.loading = false;
+                                        _this.isShow = false;
                                     }, 500);
 
-                                    console.log("success submit");
-
                                     //对接收到的json进行处理
-                                    var resultJSON = res.data;
+                                    var resultJSON = res.data.data;
                                     _this.schartData = resultJSON;
                                     _this.schartData.forEach((x) => {
                                         _this.newSchartData.push(x);
                                     });
                                     _this.newSchartData.sort(this.sortBy("value"));
-
-                                    _this.isShow = false;
                                 }
                             },
                             (res) => {
-                                if(res.code == 500){
+                                if(res.data.code == 500){
                                     setTimeout(function () {
                                         _this.loading = false;
                                         _this.$alert('出现错误，请重新尝试', '', {
@@ -140,56 +135,40 @@
                                 }
                             }
                         );
-                        // if (process.env.NODE_ENV === 'development') {
-                        //     this.url = process.env.API_HOST+'/auth/'; //需要修改
-                        //     this.$axios.post(this.url, {
-                        //         api: this.ruleForm.api,
-                        //     }).then((res) => {
-                        //         console.log("success submit");
-                        //         this.isShow = false;
-                        //     })
-                        // } else{ //build
-                        //     console.log("This is build version")
-                        //         this.url = '/auth/';
-                        //         this.$axios.post(this.url, {
-                        //             api: this.ruleForm.api,
-                        //         }).then((res) => {
-                        //             if (this.loginres){
-                        //             } else{
-                        //                 this.$router.push('/login')
-                        //             }
-                        //         })
-                        // }
                     } else {
-                        console.log('error submit!!');
+                        setTimeout(function () {
+                            _this.$alert('出现错误，请重新尝试', '', {
+                                confirmButtonText: '确定',
+                            });
+                        }, 500);
                         return false;
                     }
                 });
             },
             submitFileUpload() {
                 var _this = this;
-                console.log("提交的txt文本内容为："+_this.fileContent);
                 if(_this.fileContent != ''){
                     _this.loading = true;
-                    _this.url = process.env.API_HOST+'/getResult/';
+                    _this.url = process.env.API_HOST+'/getResult';
                     _this.$axios.post(_this.url, {api: _this.fileContent,}).then(
                         (res) => {
-                            if (res.code == 200){
-                                console.log("success submit");
+                            if (res.data.code == 200){
+                                setTimeout(function () {
+                                    _this.loading = false;
+                                    _this.isShow = false;
+                                }, 500);
 
                                 //对接收到的json进行处理
-                                var resultJSON = res.data;
+                                var resultJSON = res.data.data;
                                 _this.schartData = resultJSON;
                                 _this.schartData.forEach((x) => {
                                     _this.newSchartData.push(x);
                                 });
                                 _this.newSchartData.sort(_this.sortBy("value"));
-
-                                _this.isShow = false;
                             }
                         },
                         (res) => {
-                            if (res.code == 500){
+                            if (res.data.code == 500){
                                 setTimeout(function () {
                                     _this.loading = false;
                                     _this.$alert('出现错误，请重新尝试', '', {
@@ -199,24 +178,6 @@
                             }
                         });
                 }
-                // if (process.env.NODE_ENV === 'development') {
-                //     this.url = process.env.API_HOST+'/auth/'; //需要修改
-                //     this.$axios.post(this.url, {
-                //         api: this.ruleForm.api,
-                //     }).then((res) => {
-                //         console.log("success submit");
-                //     })
-                // } else{ //build
-                //     console.log("This is build version")
-                //     this.url = '/auth/';
-                //     this.$axios.post(this.url, {
-                //         api: this.ruleForm.api,
-                //     }).then((res) => {
-                //         if (this.loginres){
-                //         } else{
-                //             this.$router.push('/login')
-                //         }
-                //     })
                 else {
                     _this.$alert('请提交一份txt文件，或txt文件内容不能为空', '', {
                         confirmButtonText: '确定',
@@ -231,10 +192,9 @@
                 list.push(fileList[0].raw);
                 var reader = new FileReader();
                 var blob = new Blob(list);
-                reader.readAsText(blob, "UTF-8"); //读取文件
+                reader.readAsText(blob, "UTF-8");
                 reader.onload = function(evt) {
-                    _this.fileContent = evt.target.result; // 读取文件内容
-                    console.log("content:"+_this.fileContent);
+                    _this.fileContent = evt.target.result;
                 }
             },
             handleExceed(files, fileList) {
@@ -260,6 +220,7 @@
                 _this.schartData = [];
                 _this.newSchartData = [];
                 _this.isShow = true;
+                _this.tabsActiveName = 'text';
             }
         }
     }
@@ -285,7 +246,7 @@
         left: 30%;
         top: 50%;
         width: 870px;
-        height: 340px;
+        height: 360px;
         margin: -170px 0 0 -190px;
         padding: 40px;
         border-radius: 5px;
@@ -348,5 +309,4 @@
         margin-right: -10px;
         padding-top: -40px;
     }
-
 </style>

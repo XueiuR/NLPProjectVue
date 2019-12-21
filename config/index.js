@@ -5,20 +5,14 @@
 const path = require('path')
 
 module.exports = {
-  dev: {//dev环境
-
+  dev: {
     // Paths
-    // 静态资源文件夹
     assetsSubDirectory: 'static',
-    // 发布路径
     assetsPublicPath: '/',
 
-    // 代理配置表，在这里可以配置特定的请求代理到对应的API接口
-    // 例如将'localhost:8080/api/xxx'代理到'http://jsonplaceholder.typicode.com/api/xxx'
-    // 使用方法：https://vuejs-templates.github.io/webpack/proxy.html
-    proxyTable: {//用来跨域的吧
+    proxyTable: {
       '/api':{
-          target:'http://jsonplaceholder.typicode.com', //这个网址提供免费的REST API，用来测试网络请求和请求参数
+          target:'http://jsonplaceholder.typicode.com',
           changeOrigin:true,
           pathRewrite:{
               '/api':''
@@ -52,7 +46,7 @@ module.exports = {
   },
 
 
-  build: { //production环境
+  build: {
     // Template for index.html
     index: path.resolve(__dirname, '../../dist/index.html'),
 
@@ -82,5 +76,4 @@ module.exports = {
     // Set to `true` or `false` to always turn it on or off
     bundleAnalyzerReport: process.env.npm_config_report
   }
-
 }
