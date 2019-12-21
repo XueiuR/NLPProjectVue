@@ -12,4 +12,4 @@ npm install
 ```
 npm run dev
 ```
-+ 访问https://localhost:8080/使用
++ 访问https://localhost:8080/ 使用
